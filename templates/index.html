@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Transcript Analyzer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #FF3D00;
+            --primary-light: #FF7043;
+            --primary-dark: #DD2C00;
+            --secondary: #4285F4;
+            --dark: #202124;
+            --dark-gray: #5F6368;
+            --medium-gray: #E0E0E0;
+            --light-gray: #F5F5F5;
+            --white: #FFFFFF;
+            --success: #34A853;
+            --error: #EA4335;
+            --chat-user: #E8F0FE;
+            --chat-bot: #F1F3F4;
+            --gradient: linear-gradient(135deg, var(--primary), var(--primary-light));
+            --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        body {
+            background-color: #fafafa;
+            color: var(--dark);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            text-align: center;
+            margin: 30px 0 20px;
+            padding-bottom: 20px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+        }
+
+        .logo-icon {
+            color: var(--primary);
+            font-size: 32px;
+            margin-right: 12px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+
+        .subtitle {
+            color: var(--dark-gray);
+            font-size: 1.2rem;
+            font-weight: 400;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .chat-container {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 160px);
+            overflow: hidden;
+        }
+
+        .chat-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--light-gray);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .chat-icon {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+
+        .chat-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .chat-description {
+            color: var(--dark-gray);
+            margin-top: 4px;
+            font-size: 0.95rem;
+        }
+
+        .video-info-container {
+            background-color: var(--white);
+            border-bottom: 1px solid var(--light-gray);
+            padding: 6px 20px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 22px;
+            min-height: 250px;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            font-size: 1rem;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .bot-message {
+            align-self: flex-start;
+            background-color: var(--chat-bot);
+            border-bottom-left-radius: 4px;
+        }
+
+        .user-message {
+            align-self: flex-end;
+            background-color: var(--chat-user);
+            border-bottom-right-radius: 4px;
+        }
+
+        .message-time {
+            font-size: 0.8rem;
+            color: var(--dark-gray);
+            margin-top: 6px;
+            text-align: right;
+        }
+
+        .video-info {
+            display: flex;
+            background-color: var(--light-gray);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .video-thumbnail {
+            width: 120px;
+            height: 90px;
+            object-fit: cover;
+        }
+
+        .video-details {
+            padding: 12px;
+            flex: 1;
+        }
+
+        .video-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .video-channel {
+            color: var(--dark-gray);
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+        }
+
+        .video-channel i {
+            margin-right: 6px;
+            color: var(--primary);
+        }
+
+        .chat-input-container {
+            padding: 12px 20px;
+            border-top: 1px solid var(--light-gray);
+            background-color: var(--white);
+            display: none;
+        }
+
+        .url-input-container {
+            padding: 10px 20px;
+            border-top: 1px solid var(--light-gray);
+            background-color: var(--light-gray);
+            display: flex;
+            gap: 12px;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 20px;
+            border: 1px solid var(--medium-gray);
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            transition: var(--transition);
+            background-color: var(--white);
+            box-shadow: var(--shadow-sm);
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255,61,0,0.1);
+        }
+
+        .input-icon {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--dark-gray);
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 12px;
+        }
+
+        .chat-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        #chat-input {
+            width: 100%;
+            padding: 14px 48px 14px 20px;
+            border: 1px solid var(--medium-gray);
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            transition: var(--transition);
+            background-color: var(--white);
+            box-shadow: var(--shadow-sm);
+            resize: none;
+            min-height: 60px;
+            max-height: 150px;
+        }
+
+        #chat-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255,61,0,0.1);
+        }
+
+        .chat-input-icon {
+            position: absolute;
+            right: 16px;
+            bottom: 16px;
+            color: var(--dark-gray);
+            cursor: pointer;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-sm);
+            white-space: nowrap;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            background: var(--medium-gray);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn i {
+            margin-right: 8px;
+        }
+
+        .btn-reset {
+            background: var(--medium-gray);
+            color: var(--dark);
+            padding: 8px 12px;
+            font-size: 0.85rem;
+        }
+
+        .btn-reset:hover {
+            background: var(--dark-gray);
+            color: white;
+        }
+
+        .typing-indicator {
+            display: none;
+            color: var(--dark-gray);
+            font-style: italic;
+            margin-top: 8px;
+            font-size: 0.9rem;
+            align-items: center;
+        }
+
+        .typing-indicator.active {
+            display: flex;
+        }
+
+        .typing-dots {
+            display: flex;
+            margin-left: 8px;
+        }
+
+        .typing-dots span {
+            width: 8px;
+            height: 8px;
+            background-color: var(--dark-gray);
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 2px;
+            animation: bounce 1.4s infinite ease-in-out;
+        }
+
+        .typing-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-4px); }
+        }
+
+        .error-message {
+            color: var(--error);
+            background-color: rgba(234,67,53,0.1);
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            margin-top: 12px;
+            display: none;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
+        .error-message i {
+            margin-right: 8px;
+        }
+
+        .error-message.active {
+            display: flex;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 20px;
+            padding: 20px 0;
+            color: var(--dark-gray);
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .chat-container {
+                height: calc(100vh - 220px);
+            }
+            
+            .message {
+                max-width: 90%;
+                font-size: 0.95rem;
+            }
+            
+            .chat-input-group, .url-input-container {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                padding: 12px;
+            }
+
+            .btn-reset {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                gap: 4px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                <div class="logo-icon">
+                    <i class="fab fa-youtube"></i>
+                </div>
+                <h1>YouTube Transcript Analyzer</h1>
+            </div>
+            <p class="subtitle">Paste a YouTube URL to analyze its transcript and comments</p>
+        </header>
+
+        <main class="main-content">
+            <div class="chat-container">
+                <div class="chat-header">
+                    <div style="display: flex; align-items: center;">
+                        <div class="chat-icon">
+                            <i class="fas fa-robot"></i>
+                        </div>
+                        <div>
+                            <h2 class="chat-title">YouTube AI Assistant</h2>
+                            <p class="chat-description">Ask questions about any YouTube video's content</p>
+                        </div>
+                    </div>
+                    <div class="button-group">
+                        <button id="reset-btn" class="btn btn-reset">
+                            <i class="fas fa-sync-alt"></i> Clear Chat
+                        </button>
+                        <button id="new-url-btn" class="btn btn-reset">
+                            <i class="fas fa-link"></i> New URL
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="video-info-container" id="video-info-container"></div>
+                <div class="chat-messages" id="chat-messages">
+                    <div class="message bot-message">
+                        Welcome! Paste a YouTube URL below to start analyzing its content.
+                        <div class="message-time">Just now</div>
+                    </div>
+                </div>
+                
+                <div class="url-input-container" id="url-input-container">
+                    <div class="input-wrapper">
+                        <input type="text" id="youtube-url" placeholder="https://www.youtube.com/watch?v=..." />
+                        <i class="fas fa-link input-icon"></i>
+                    </div>
+                    <button id="load-video" class="btn">
+                        <i class="fas fa-play"></i> Load Video
+                    </button>
+                </div>
+                
+                <div class="chat-input-container" id="chat-input-container">
+                    <div class="typing-indicator" id="typing-indicator">
+                        <span>AI is analyzing</span>
+                        <div class="typing-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="chat-input-group">
+                        <div class="chat-input-wrapper">
+                            <textarea id="chat-input" placeholder="Ask a question about this video..." rows="1"></textarea>
+                            <i class="fas fa-paperclip chat-input-icon"></i>
+                        </div>
+                        <button id="send-btn" class="btn send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="error-message" id="chat-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <span>There was an error processing your request. Please try again.</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>© 2023 YouTube Transcript Analyzer | Powered by AI</p>
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatInput = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+            const chatMessages = document.getElementById('chat-messages');
+            const typingIndicator = document.getElementById('typing-indicator');
+            const chatError = document.getElementById('chat-error');
+            const youtubeUrlInput = document.getElementById('youtube-url');
+            const loadVideoBtn = document.getElementById('load-video');
+            const urlInputContainer = document.getElementById('url-input-container');
+            const chatInputContainer = document.getElementById('chat-input-container');
+            const resetBtn = document.getElementById('reset-btn');
+            const newUrlBtn = document.getElementById('new-url-btn');
+            const videoInfoContainer = document.getElementById('video-info-container');
+            
+            let currentVideoId = null;
+            let currentVideoInfo = null;
+            
+            // Auto-resize textarea
+            chatInput.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight) + 'px';
+            });
+            
+            // Send message on Enter key (but allow Shift+Enter for new lines)
+            chatInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Send message on button click
+            sendBtn.addEventListener('click', sendMessage);
+            
+            // Load video when URL is submitted
+            loadVideoBtn.addEventListener('click', loadVideo);
+            
+            // Also allow pressing Enter in the URL input
+            youtubeUrlInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    loadVideo();
+                }
+            });
+
+            // Reset button functionality
+            resetBtn.addEventListener('click', resetChat);
+
+            // New URL button functionality
+            newUrlBtn.addEventListener('click', resetUrl);
+            
+            async function resetChat() {
+                try {
+                    resetBtn.disabled = true;
+                    resetBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Clearing...';
+                    
+                    // Clear only chat messages
+                    chatMessages.innerHTML = '';
+                    if (!currentVideoId) {
+                        // Only show welcome message if no video is loaded
+                        chatMessages.appendChild(createWelcomeMessage());
+                    } else {
+                        // Show chat cleared message when video is loaded
+                        addMessage("Chat cleared successfully.", 'bot');
+                    }
+                    
+                    // Clear textarea
+                    chatInput.value = '';
+                    chatInput.style.height = 'auto';
+                    
+                } catch (error) {
+                    showError(error.message);
+                } finally {
+                    resetBtn.disabled = false;
+                    resetBtn.innerHTML = '<i class="fas fa-sync-alt"></i> Clear Chat';
+                }
+            }
+
+            async function resetUrl() {
+                try {
+                    newUrlBtn.disabled = true;
+                    newUrlBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Resetting...';
+                    
+                    // Clear chat messages
+                    chatMessages.innerHTML = '';
+                    
+                    // Clear video info
+                    videoInfoContainer.innerHTML = '';
+                    currentVideoId = null;
+                    currentVideoInfo = null;
+                    
+                    // Clear URL input
+                    youtubeUrlInput.value = '';
+                    
+                    // Switch to URL input mode
+                    urlInputContainer.style.display = 'flex';
+                    chatInputContainer.style.display = 'none';
+                    
+                    // Show welcome message
+                    chatMessages.appendChild(createWelcomeMessage());
+                    
+                    // Focus the URL input
+                    youtubeUrlInput.focus();
+                    
+                } catch (error) {
+                    showError(error.message);
+                } finally {
+                    newUrlBtn.disabled = false;
+                    newUrlBtn.innerHTML = '<i class="fas fa-link"></i> New URL';
+                }
+            }
+            
+            function createWelcomeMessage() {
+                const welcomeDiv = document.createElement('div');
+                welcomeDiv.classList.add('message', 'bot-message');
+                welcomeDiv.innerHTML = `
+                    Welcome! Paste a YouTube URL below to start analyzing its content.
+                    <div class="message-time">Just now</div>
+                `;
+                return welcomeDiv;
+            }
+            
+            async function loadVideo() {
+                const url = youtubeUrlInput.value.trim();
+                if (!url) {
+                    showError("Please enter a YouTube URL");
+                    return;
+                }
+                
+                const videoId = extractVideoId(url);
+                if (!videoId) {
+                    showError("Invalid YouTube video URL format");
+                    return;
+                }
+                
+                currentVideoId = videoId;
+                
+                // Show loading state
+                loadVideoBtn.disabled = true;
+                loadVideoBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Loading...';
+                
+                try {
+                    // Call Flask backend
+                    const response = await fetch('/get_transcript', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: `video_url=${encodeURIComponent(url)}`
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error || "Failed to load video");
+                    }
+                    
+                    // Clear existing messages
+                    chatMessages.innerHTML = '';
+                    
+                    // Create video info display
+                    currentVideoInfo = {
+                        title: "YouTube Video", // In production, fetch from YouTube API
+                        channel: "Channel Name",
+                        thumbnail: `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`
+                    };
+                    
+                    // Remove existing video info if present
+                    videoInfoContainer.innerHTML = '';
+                    addVideoInfo(currentVideoInfo);
+                    
+                    // Show success message
+                    addMessage(data.answer || "Video loaded successfully! Ask me anything about it.", 'bot');
+                    
+                    // Switch to chat input mode
+                    urlInputContainer.style.display = 'none';
+                    chatInputContainer.style.display = 'block';
+                    
+                    // Focus the chat input
+                    chatInput.focus();
+                    
+                } catch (error) {
+                    showError(error.message);
+                } finally {
+                    // Reset load button
+                    loadVideoBtn.disabled = false;
+                    loadVideoBtn.innerHTML = '<i class="fas fa-play"></i> Load Video';
+                }
+            }
+            
+            function extractVideoId(url) {
+                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+                const match = url.match(regExp);
+                return (match && match[2].length === 11) ? match[2] : null;
+            }
+            
+            function addVideoInfo(videoInfo) {
+                const videoDiv = document.createElement('div');
+                videoDiv.classList.add('video-info');
+                
+                videoDiv.innerHTML = `
+                    <img class="video-thumbnail" src="${videoInfo.thumbnail}" alt="Thumbnail for ${videoInfo.title}">
+                    <div class="video-details">
+                        <h3 class="video-title">${videoInfo.title}</h3>
+                        <p class="video-channel"><i class="fas fa-user"></i> ${videoInfo.channel}</p>
+                    </div>
+                `;
+                
+                videoInfoContainer.appendChild(videoDiv);
+            }
+            
+            async function sendMessage() {
+                const message = chatInput.value.trim();
+                if (!message) return;
+                
+                // Add user message to chat
+                addMessage(message, 'user');
+                chatInput.value = '';
+                chatInput.style.height = 'auto';
+                
+                // Show typing indicator
+                typingIndicator.classList.add('active');
+                
+                // Disable input while waiting for response
+                chatInput.disabled = true;
+                sendBtn.disabled = true;
+                
+                try {
+                    // Call Flask backend
+                    const response = await fetch('/get_transcript', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                        },
+                        body: new URLSearchParams({
+                            video_url: youtubeUrlInput.value,
+                            query: message
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(data.error || "Failed to get response");
+                    }
+                    
+                    // Add AI response to chat
+                    addMessage(data.answer, 'bot');
+                    
+                } catch (error) {
+                    showError(error.message);
+                } finally {
+                    typingIndicator.classList.remove('active');
+                    chatInput.disabled = false;
+                    sendBtn.disabled = false;
+                    chatInput.focus();
+                }
+            }
+            
+            function addMessage(text, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', sender === 'user' ? 'user-message' : 'bot-message');
+                
+                const now = new Date();
+                const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                messageDiv.innerHTML = `
+                    ${text}
+                    <div class="message-time">${timeString}</div>
+                `;
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function showError(message) {
+                chatError.querySelector('span').textContent = message;
+                chatError.classList.add('active');
+                
+                setTimeout(() => {
+                    chatError.classList.remove('active');
+                }, 5000);
+            }
+        });
+    </script>
+</body>
+</html>
